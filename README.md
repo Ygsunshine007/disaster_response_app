@@ -39,7 +39,12 @@ Add data visualizations using Plotly in the web app.
     - To run ML pipeline that trains classifier and saves
         `python models/train_classifier.py data/DisasterResponse.db models/classifier.pkl`
 
-2. Run the following command in the app's directory to run your web app.
+2. Run the following command in the app's directory to run your web app. Please go to app directory first
     `python run.py`
 
 3. Go to http://0.0.0.0:3001/
+## I used udacity workspace and followed the following steps:
+1. Once your app is running (python run.py)
+2. open another terminal and type env|grep WORK this will give you the spaceid it will start with view*** and some characters after that
+3. Now open your browser window and type https://viewa7a4999b-3001.udacity-student-workspaces.com, replace the whole viewa7a4999b with your space id you got in the step 2
+4. Press enter and the app should now run for you
