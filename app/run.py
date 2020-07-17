@@ -1,7 +1,14 @@
 import json
 import plotly
 import pandas as pd
+import numpy as np
+import operator
+import re
+from plotly.graph_objs import Bar
+from pprint import pprint
+from collections import Counter
 
+from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 
@@ -40,15 +47,43 @@ def index():
     
     # extract data needed for visuals
     # TODO: Below is an example - modify to extract data for your own visuals
-    genre_counts = df.groupby('genre').count()['message']
-    genre_names = list(genre_counts.index)
+      # extract data needed for visuals
+    genre_counts = df.groupby('genre').count()['message'] # message count based\
+                                                          # on genre
+    genre_names = list(genre_counts.index)                # genre names
+    cat_p = df[df.columns[4:]].sum()/len(df)              # proportion based on\
+                                                          # categories
+    cat_p = cat_p.sort_values(ascending = False)          # largest bar will be\
+                                                          # on left
+    cats = list(cat_p.index)                              # category names
+
+    words_with_repetition=[]                              # will contain all\
+                                                          # words words with\
+                                                          # repetition
+    for text in df['message'].values:
+        tokenized_ = tokenize(text)
+        words_with_repetition.extend(tokenized_)
+
+    word_count_dict = Counter(words_with_repetition)      # dictionary\
+                                                          # containing word\
+                                                          # count for all words
     
-    category_names = df.iloc[:,4:].columns
-    category_boolean = (df.iloc[:,4:] != 0).sum().values
-    
+    sorted_word_count_dict = dict(sorted(word_count_dict.items(),
+                                         key=operator.itemgetter(1),
+                                         reverse=True))   # sort dictionary by\
+                                                          # values
+    top, top_10 =0, {}
+
+    for k,v in sorted_word_count_dict.items():
+        top_10[k]=v
+        top+=1
+        if top==10:
+            break
+    words=list(top_10.keys())
+    pprint(words)
+    count_props=100*np.array(list(top_10.values()))/df.shape[0]
     # create visuals
-    # TODO: Below is an example - modify to create your own visuals
-    graphs = [
+    figures = [
         {
             'data': [
                 Bar(
@@ -70,31 +105,52 @@ def index():
         {
             'data': [
                 Bar(
-                    x=cateogry_names,
-                    y=category_boolean
+                    x=cats,
+                    y=cat_p
                 )
             ],
 
             'layout': {
-                'title': 'Distribution of Message Genres',
+                'title': 'Proportion of Messages <br> by Category',
                 'yaxis': {
-                    'title': "Count"
+                    'title': "Proportion",
+                    'automargin':True
                 },
                 'xaxis': {
                     'title': "Category",
-                    'tickangle':30
-                  
+                    'tickangle': -40,
+                    'automargin':True
+                }
+            }
+        },
+        {
+            'data': [
+                Bar(
+                    x=words,
+                    y=count_props
+                )
+            ],
+
+            'layout': {
+                'title': 'Frequency of top 10 words <br> as percentage',
+                'yaxis': {
+                    'title': 'Occurrence<br>(Out of 100)',
+                    'automargin': True
+                },
+                'xaxis': {
+                    'title': 'Top 10 words',
+                    'automargin': True
                 }
             }
         }
     ]
     
     # encode plotly graphs in JSON
-    ids = ["graph-{}".format(i) for i, _ in enumerate(graphs)]
-    graphJSON = json.dumps(graphs, cls=plotly.utils.PlotlyJSONEncoder)
+    ids = ["figure-{}".format(i) for i, _ in enumerate(figures)]
+    figuresJSON = json.dumps(figures, cls=plotly.utils.PlotlyJSONEncoder)
     
-    # render web page with plotly graphs
-    return render_template('master.html', ids=ids, graphJSON=graphJSON)
+    # render web page with plotly figures
+    return render_template('master.html', ids=ids, figuresJSON=figuresJSON)
 
 
 # web page that handles user query and displays model results
