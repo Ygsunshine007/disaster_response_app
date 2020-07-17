@@ -65,12 +65,17 @@
 </div>
 
 <script type="text/javascript">
-    const graphs = {{graphJSON | safe}};
-    const ids = {{ids | safe}};
-    for(let i in graphs) {
-        Plotly.plot(ids[i], graphs[i].data, graphs[i].layout);
-    }
-</script>
+  // plots the figure with id
+  // id must match with the div id above in the html
+  var figures = {{figuresJSON | safe}};
+  var ids = {{ids | safe}};
+  for(var i in figures) {
+    Plotly.plot(ids[i],
+                figures[i].data,
+                figures[i].layout || {});
+  }
+ </script>
+
 
 </body>
 </html>
