@@ -32,20 +32,40 @@ def clean_data(df):
     Outputs:
         df -> clean data Pandas DataFrame
     """
-    categories = df.categories.str.split(pat=';',expand=True)
-    firstrow = categories.iloc[0,:]
-    category_colnames = firstrow.apply(lambda x:x[:-2])
-    categories.columns = category_colnames
-    for column in categories:
-        categories[column] = categories[column].str[-1]
-        categories[column] = categories[column].astype(np.int)
-    df=df[df['related']!=2]
-    df = df.drop('categories',axis=1)
-    df = pd.concat([df,categories],axis=1,sort=False)
+    # Split categories into separate category columns
+    categories = df['categories'].str.split(";",\
+                                            expand = True)
     
-    df = df.drop_duplicates()
-    return df
+    # select the first row of the categories dataframe
+    row = categories.iloc[0,:].values
+    
+    # use this row to extract a list of new column names for categories.
+    new_cols = [r[:-2] for r in row]
 
+    # rename the columns of `categories`
+    categories.columns = new_cols
+
+    # Convert category values to just numbers 0 or 1.
+    for column in categories:
+
+        # set each value to be the last character of the string
+        categories[column] = categories[column].str[-1]
+        
+        # convert column from string to numeric
+        categories[column] = pd.to_numeric(categories[column])
+    
+    # drop the original categories column from `df`
+    df.drop('categories', axis = 1, inplace = True)
+
+    # concatenate the original dataframe with the new `categories` dataframe
+    df[categories.columns] = categories
+    
+    # remove non binary values
+    df= df [df['related']!=2]
+    # drop duplicates
+    df.drop_duplicates(inplace = True)
+
+    return df
 
 def save_data(df, database_filename):
     """
@@ -56,7 +76,7 @@ def save_data(df, database_filename):
         database_filename -> database file (.db) destination path
     """
     engine = create_engine('sqlite:///'+ database_filename)
-    df.to_sql('df', engine, index=False)  
+    df.to_sql('df', engine, index=False, if_exists='replace')  
 
 
 def main():
